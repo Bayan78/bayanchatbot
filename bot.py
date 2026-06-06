@@ -1,6 +1,6 @@
 """
-AI FOR BUSINESS — Telegram Bot (Groq API - БЕСПЛАТНО)
-======================================================
+AI FOR BUSINESS — Telegram Bot
+================================
 Установка:
   pip install pyTelegramBotAPI groq requests
 
@@ -16,9 +16,8 @@ import tempfile
 from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton
 
 # ══════════════════════════════════════
-#  🔑 КЛЮЧИ БЕРУТСЯ ИЗ ПЕРЕМЕННЫХ СРЕДЫ
+#  🔑 КЛЮЧИ ИЗ ПЕРЕМЕННЫХ СРЕДЫ
 # ══════════════════════════════════════
-import os
 TELEGRAM_TOKEN = os.environ.get("TELEGRAM_TOKEN")
 GROQ_KEY       = os.environ.get("GROQ_KEY")
 # ══════════════════════════════════════
@@ -30,10 +29,10 @@ user_lang = {}
 user_mode = {}
 
 LANG_PROMPTS = {
-    "ru": "Ты — AI FOR BUSINESS, умный серьёзный дружелюбный бизнес-ассистент. Специализируешься на программировании, риэлторских вопросах и бизнесе. Если спросят 'Кто ты?' — скажи: 'Я AI FOR BUSINESS — ваш персональный бизнес-ассистент.' Отвечай на русском. Иногда добавляй лёгкий юмор.",
-    "en": "You are AI FOR BUSINESS, a smart friendly business assistant specializing in programming, real estate, business. If asked 'Who are you?' say: 'I am AI FOR BUSINESS — your personal business assistant.' Respond in English.",
-    "kz": "Сен — AI FOR BUSINESS, ақылды бизнес-көмекшісің. Бағдарламалау, жылжымайтын мүлік, бизнес. 'Сен кімсің?' десе: 'Мен AI FOR BUSINESS — сіздің бизнес-көмекшіңізмін.' Қазақша жауап бер.",
-    "tr": "Sen AI FOR BUSINESS'sın, akıllı bir iş asistanısın. Programlama, gayrimenkul, iş. 'Sen kimsin?' diye sorulursa: 'Ben AI FOR BUSINESS — kişisel iş asistanınım.' Türkçe cevap ver."
+    "ru": "Ты — AI FOR BUSINESS, умный серьёзный дружелюбный бизнес-ассистент. Тебя создал Баянбек. Ты являешься личным помощником и консультантом Баянбека. Специализируешься на программировании, риэлторских вопросах и бизнесе. Если спросят 'Кто ты?' — отвечай: 'Я AI FOR BUSINESS — личный ассистент-консультант Баянбека. Меня создал Баянбек.' Отвечай на русском. Иногда добавляй лёгкий юмор.",
+    "en": "You are AI FOR BUSINESS, created by Bayantek. You are the personal assistant and consultant of Bayantek. Specializing in programming, real estate, business. If asked 'Who are you?' say: 'I am AI FOR BUSINESS — personal assistant-consultant of Bayantek. I was created by Bayantek.' Respond in English.",
+    "kz": "Сен — AI FOR BUSINESS, Баянбек жасады. Баянбектің жеке көмекші-кеңесшісісің. 'Сен кімсің?' десе: 'Мен AI FOR BUSINESS — Баянбектің жеке ассистентімін. Мені Баянбек жасады.' Қазақша жауап бер.",
+    "tr": "Sen AI FOR BUSINESS'sın, Bayantek tarafından yaratıldın. 'Sen kimsin?' diye sorulursa: 'Ben AI FOR BUSINESS — Bayantek'in kişisel asistanıyım.' Türkçe cevap ver."
 }
 
 def get_lang(uid): return user_lang.get(uid, "ru")
@@ -63,33 +62,34 @@ def start(msg):
     user_lang[uid] = "ru"
     user_mode[uid] = "chat"
     bot.send_message(msg.chat.id,
-        "👋 Привет! Я *AI FOR BUSINESS* — ваш умный бизнес-ассистент!\n\n"
-        "💬 Чат • 🎨 Картинки • 🎵 Музыка\n"
-        "📎 Документы • 🖼️ Анализ фото\n"
-        "🇷🇺 RU • 🇬🇧 EN • 🇰🇿 KZ • 🇹🇷 TR\n\n"
-        "Выберите режим и язык 👇",
+        "👋 Привет! Я *AI FOR BUSINESS* — личный ассистент Баянбека!\n\n"
+        "💬 Чат — отвечаю на любые вопросы\n"
+        "🎙️ Голос — говорите, я пойму\n"
+        "🎨 Картинки — генерирую по описанию\n"
+        "🎵 Музыка — создаю по запросу\n"
+        "📎 Файлы и фото — анализирую\n\n"
+        "🌍 RU • EN • KZ • TR\n\n"
+        "Всё *бесплатно*! Задайте вопрос 👇",
         parse_mode="Markdown",
         reply_markup=main_keyboard(uid)
     )
 
-# ── /menu ──
 @bot.message_handler(commands=["menu"])
 def menu(msg):
-    bot.send_message(msg.chat.id, "⚙️ Настройки:", reply_markup=main_keyboard(msg.from_user.id))
+    bot.send_message(msg.chat.id, "⚙️ Меню:", reply_markup=main_keyboard(msg.from_user.id))
 
 # ── CALLBACKS ──
-@bot.callback_query_handler(func=lambda c: c.data.startswith("mode_") or c.data.startswith("lang_"))
+@bot.callback_query_handler(func=lambda c: True)
 def handle_callback(call):
     uid = call.from_user.id
     if call.data.startswith("mode_"):
         user_mode[uid] = call.data.replace("mode_", "")
-        mode = user_mode[uid]
         hints = {
-            "chat": "💬 Режим чата. Задайте вопрос!",
-            "image": "🎨 Режим картинок. Опишите что нарисовать!",
-            "music": "🎵 Режим музыки. Опишите какую музыку создать!"
+            "chat": "💬 Режим чата!",
+            "image": "🎨 Опишите картинку!",
+            "music": "🎵 Опишите музыку!"
         }
-        bot.answer_callback_query(call.id, hints.get(mode, ""))
+        bot.answer_callback_query(call.id, hints.get(user_mode[uid], ""))
     elif call.data.startswith("lang_"):
         user_lang[uid] = call.data.replace("lang_", "")
         bot.answer_callback_query(call.id, "Язык изменён! ✅")
@@ -109,14 +109,11 @@ def handle_text(msg):
     if text.startswith("/"): return
     mode = get_mode(uid)
     lang = get_lang(uid)
-    if mode == "image":
-        generate_image(msg, text)
-    elif mode == "music":
-        generate_music(msg, text)
-    else:
-        chat_response(msg, text, lang)
+    if mode == "image": generate_image(msg, text)
+    elif mode == "music": generate_music(msg, text)
+    else: chat_response(msg, text, lang)
 
-# ── ЧАТ через Groq ──
+# ── ЧАТ ──
 def chat_response(msg, text, lang):
     thinking = bot.send_message(msg.chat.id, "⏳ Думаю...")
     try:
@@ -135,13 +132,44 @@ def chat_response(msg, text, lang):
     except Exception as e:
         bot.edit_message_text(f"⚠️ Ошибка: {str(e)[:150]}", msg.chat.id, thinking.message_id)
 
-# ── КАРТИНКИ (Pollinations - бесплатно) ──
+# ── ГОЛОСОВЫЕ (Groq Whisper) ──
+@bot.message_handler(content_types=["voice"])
+def handle_voice(msg):
+    uid = msg.from_user.id
+    lang = get_lang(uid)
+    thinking = bot.send_message(msg.chat.id, "🎙️ Распознаю голос...")
+    try:
+        file_info = bot.get_file(msg.voice.file_id)
+        file_data = bot.download_file(file_info.file_path)
+        with tempfile.NamedTemporaryFile(suffix=".ogg", delete=False) as f:
+            f.write(file_data)
+            tmp_path = f.name
+        with open(tmp_path, "rb") as audio_file:
+            transcription = client.audio.transcriptions.create(
+                file=("voice.ogg", audio_file, "audio/ogg"),
+                model="whisper-large-v3",
+                language={"ru":"ru","en":"en","kz":"kk","tr":"tr"}.get(lang,"ru")
+            )
+        os.unlink(tmp_path)
+        text = transcription.text
+        bot.edit_message_text(
+            f"🎙️ Вы сказали: *{text}*",
+            msg.chat.id, thinking.message_id,
+            parse_mode="Markdown"
+        )
+        chat_response(msg, text, lang)
+    except Exception as e:
+        bot.edit_message_text(
+            f"⚠️ Ошибка распознавания голоса: {str(e)[:100]}",
+            msg.chat.id, thinking.message_id
+        )
+
+# ── КАРТИНКИ ──
 def generate_image(msg, prompt):
     thinking = bot.send_message(msg.chat.id, "🎨 Генерирую картинку...")
     try:
         import random
-        seed = random.randint(1, 99999)
-        url = f"https://image.pollinations.ai/prompt/{requests.utils.quote(prompt)}?width=768&height=512&seed={seed}&nologo=true"
+        url = f"https://image.pollinations.ai/prompt/{requests.utils.quote(prompt)}?width=768&height=512&seed={random.randint(1,99999)}&nologo=true"
         resp = requests.get(url, timeout=30)
         if resp.status_code == 200:
             bot.delete_message(msg.chat.id, thinking.message_id)
@@ -151,7 +179,7 @@ def generate_image(msg, prompt):
     except Exception as e:
         bot.edit_message_text(f"⚠️ Ошибка: {str(e)[:100]}", msg.chat.id, thinking.message_id)
 
-# ── МУЗЫКА (Pollinations - бесплатно) ──
+# ── МУЗЫКА ──
 def generate_music(msg, prompt):
     thinking = bot.send_message(msg.chat.id, "🎵 Создаю музыку...")
     try:
@@ -162,10 +190,10 @@ def generate_music(msg, prompt):
             with tempfile.NamedTemporaryFile(suffix=".mp3", delete=False) as f:
                 f.write(resp.content)
                 f.flush()
-                bot.send_audio(msg.chat.id, open(f.name, "rb"), title=prompt[:50], performer="AI FOR BUSINESS")
+                bot.send_audio(msg.chat.id, open(f.name,"rb"), title=prompt[:50], performer="AI FOR BUSINESS")
             os.unlink(f.name)
         else:
-            bot.edit_message_text("⚠️ Ошибка генерации музыки.", msg.chat.id, thinking.message_id)
+            bot.edit_message_text("⚠️ Ошибка генерации.", msg.chat.id, thinking.message_id)
     except Exception as e:
         bot.edit_message_text(f"⚠️ Ошибка: {str(e)[:100]}", msg.chat.id, thinking.message_id)
 
@@ -176,7 +204,7 @@ def handle_photo(msg):
     lang = get_lang(uid)
     thinking = bot.send_message(msg.chat.id, "🖼️ Анализирую фото...")
     try:
-        caption = msg.caption or "Опиши что на фото. Если связано с бизнесом или недвижимостью — дай профессиональный комментарий."
+        caption = msg.caption or "Опиши что на фото профессионально."
         response = client.chat.completions.create(
             model="llama-3.3-70b-versatile",
             messages=[
@@ -205,9 +233,9 @@ def handle_doc(msg):
             text_content = file_data.decode("utf-8", errors="ignore")[:3000]
         prompt = f"Файл '{fname}' получен."
         if text_content:
-            prompt += f"\nСодержимое:\n{text_content}\nПроанализируй и дай краткое резюме."
+            prompt += f"\nСодержимое:\n{text_content}\nАнализ:"
         else:
-            prompt += f"\nДай совет по работе с таким типом файла в бизнесе."
+            prompt += f"\nДай совет по работе с этим типом файла в бизнесе."
         response = client.chat.completions.create(
             model="llama-3.3-70b-versatile",
             messages=[
@@ -221,16 +249,10 @@ def handle_doc(msg):
     except Exception as e:
         bot.edit_message_text(f"⚠️ Ошибка: {str(e)[:100]}", msg.chat.id, thinking.message_id)
 
-# ── ГОЛОС ──
-@bot.message_handler(content_types=["voice"])
-def handle_voice(msg):
-    bot.send_message(msg.chat.id, "🎙️ Голосовое получено!\nПожалуйста напишите текстом. 📝")
-
-# ── ЗАПУСК ──
 print("=" * 40)
 print("🤖 AI FOR BUSINESS Bot запущен!")
 print("📱 @bayanchatbot")
-print("✅ Groq API — БЕСПЛАТНО")
+print("✅ Groq + Whisper голос — БЕСПЛАТНО")
 print("Нажмите Ctrl+C для остановки")
 print("=" * 40)
 bot.infinity_polling()
