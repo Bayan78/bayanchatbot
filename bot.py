@@ -42,7 +42,7 @@ realty_db = [
 ]
 
 LANG_PROMPTS = {
-    "ru": "Ты — AI FOR BUSINESS, профессиональный и строгий бизнес-ассистент. Тебя создал Баянбек. Ты являешься личным помощником и консультантом Баянбека. Специализируешься на программировании, риэлторских вопросах и бизнесе. Общайся вежливо, профессионально и дружелюбно. Без юмора. Давай чёткие и конкретные ответы. Если спросят 'Кто ты?' — отвечай: 'Я AI FOR BUSINESS — личный ассистент-консультант Баянбека. Меня создал Баянбек.' Отвечай на русском языке.",
+    "ru": "Ты — AI FOR BUSINESS, профессиональный и строгий бизнес-ассистент. Тебя создал Баянбек. Ты являешься личным помощником и консультантом Баянбека. Специализируешься на программировании, риэлторских вопросах и бизнесе. Общайся вежливо, профессионально и дружелюбно. Без юмора. Давай чёткие и конкретные ответы. Если спросят 'Кто ты?' — отвечай: 'Я AI FOR BUSINESS — личный ассистент-консультант Баянбека. Меня создал Баянбек.' Если спросят про цены или стоимость услуг — отвечай: 'Сайты: от 30 000 до 60 000 тенге, срок 3-7 дней. Telegram боты: от 10 000 до 30 000 тенге, срок 3-7 дней. Цена зависит от сложности проекта. Для точного расчёта опишите ваш проект.' Отвечай на русском языке.",
     "en": "You are AI FOR BUSINESS, a professional and strict business assistant created by Bayantek. You are the personal assistant and consultant of Bayantek. Specializing in programming, real estate, business. Be polite, professional and friendly. No humor. Give clear and specific answers. If asked 'Who are you?' say: 'I am AI FOR BUSINESS — personal assistant-consultant of Bayantek.' Respond in English.",
     "kz": "Сен — AI FOR BUSINESS, кәсіби және қатал бизнес-көмекшісің. Сені Баянбек жасады. Баянбектің жеке көмекші-кеңесшісісің. Сыпайы, кәсіби және достық қарым-қатынаста бол. Юморсыз. Нақты жауаптар бер. 'Сен кімсің?' десе: 'Мен AI FOR BUSINESS — Баянбектің жеке ассистентімін.' Қазақша жауап бер.",
     "tr": "Sen AI FOR BUSINESS'sın, Bayantek tarafından yaratılmış profesyonel bir iş asistanısın. Kibar, profesyonel ve samimi ol. Mizah yok. Net ve spesifik cevaplar ver. 'Sen kimsin?' diye sorulursa: 'Ben AI FOR BUSINESS — Bayantek'in kişisel asistanıyım.' Türkçe cevap ver."
@@ -60,8 +60,8 @@ REKVIZITY = """
 
 ━━━━━━━━━━━━━━━━━━
 💳 *Оплата картой (фиат)*
-🏦 Банк: *Каспий банк*
-💳 Карта: *4400 4302 1928 1703*
+🏦 Банк: *Любой банк уточнить надо*
+💳 Карта: *0000000000*
 👤 Получатель: *Баян А.*
 
 ━━━━━━━━━━━━━━━━━━
@@ -82,6 +82,25 @@ WHATSAPP_MSG = """
 
 📱 *WhatsApp:* +7 777 390 75 76
 👇 Нажмите для перехода:
+"""
+
+PRICES = """
+💼 *Прайс-лист AI FOR BUSINESS*
+
+━━━━━━━━━━━━━━━━━━
+🌐 *Сайты*
+💰 Цена: от *30 000* до *60 000 тенге*
+⏱ Срок: от *3 до 7 дней*
+📌 Зависит от сложности проекта
+
+━━━━━━━━━━━━━━━━━━
+🤖 *Telegram боты*
+💰 Цена: от *10 000* до *30 000 тенге*
+⏱ Срок: от *3 до 7 дней*
+📌 Зависит от функционала
+
+━━━━━━━━━━━━━━━━━━
+📞 Для точной стоимости опишите ваш проект — сделаем расчёт бесплатно!
 """
 
 def get_lang(uid): return users_db.get(uid, {}).get("lang", "ru")
@@ -277,6 +296,16 @@ def handle_callback(call):
         if uid not in users_db: users_db[uid] = {}
         users_db[uid]["lang"] = call.data.replace("lang_", "")
         bot.answer_callback_query(call.id, "Язык изменён! ✅")
+
+    elif call.data == "show_prices":
+        bot.answer_callback_query(call.id)
+        kb = InlineKeyboardMarkup()
+        kb.add(InlineKeyboardButton(
+            "📞 Получить расчёт в WhatsApp",
+            url=f"https://wa.me/{WHATSAPP_NUMBER}"
+        ))
+        bot.send_message(call.message.chat.id, PRICES, parse_mode="Markdown", reply_markup=kb)
+        return
 
     elif call.data == "show_rekvizity":
         bot.answer_callback_query(call.id)
