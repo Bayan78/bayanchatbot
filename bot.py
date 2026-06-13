@@ -109,7 +109,6 @@ def main_keyboard(uid):
     kb.add(
         InlineKeyboardButton("💬 Чат" + (" ✅" if mode=="chat" else ""), callback_data="mode_chat"),
         InlineKeyboardButton("🎨 Картинка" + (" ✅" if mode=="image" else ""), callback_data="mode_image"),
-        InlineKeyboardButton("🎵 Музыка" + (" ✅" if mode=="music" else ""), callback_data="mode_music"),
     )
     kb.add(
         InlineKeyboardButton("🇷🇺 RU" + (" ✅" if lang=="ru" else ""), callback_data="lang_ru"),
@@ -379,7 +378,6 @@ def handle_text(msg):
     mode = get_mode(uid)
     lang = get_lang(uid)
     if mode == "image": generate_image(msg, text)
-    elif mode == "music": generate_music(msg, text)
     else: chat_response(msg, text, lang)
 
 # ── ЧАТ ──
