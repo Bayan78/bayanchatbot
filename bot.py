@@ -42,11 +42,47 @@ realty_db = [
 ]
 
 LANG_PROMPTS = {
-    "ru": "Ты — AI FOR BUSINESS, умный серьёзный дружелюбный бизнес-ассистент. Тебя создал Баянбек. Ты являешься личным помощником и консультантом Баянбека. Специализируешься на программировании, риэлторских вопросах и бизнесе. Если спросят 'Кто ты?' — отвечай: 'Я AI FOR BUSINESS — личный ассистент-консультант Баянбека. Меня создал Баянбек.' Отвечай на русском. Иногда добавляй лёгкий юмор.",
-    "en": "You are AI FOR BUSINESS, created by Bayantek. Personal assistant of Bayantek. If asked 'Who are you?' say: 'I am AI FOR BUSINESS — personal assistant of Bayantek.' Respond in English.",
-    "kz": "Сен — AI FOR BUSINESS, Баянбек жасады. 'Сен кімсің?' десе: 'Мен AI FOR BUSINESS — Баянбектің жеке ассистентімін.' Қазақша жауап бер.",
-    "tr": "Sen AI FOR BUSINESS'sın, Bayantek tarafından yaratıldın. 'Sen kimsin?' diye sorulursa: 'Ben AI FOR BUSINESS — Bayantek'in asistanıyım.' Türkçe cevap ver."
+    "ru": "Ты — AI FOR BUSINESS, профессиональный и строгий бизнес-ассистент. Тебя создал Баянбек. Ты являешься личным помощником и консультантом Баянбека. Специализируешься на программировании, риэлторских вопросах и бизнесе. Общайся вежливо, профессионально и дружелюбно. Без юмора. Давай чёткие и конкретные ответы. Если спросят 'Кто ты?' — отвечай: 'Я AI FOR BUSINESS — личный ассистент-консультант Баянбека. Меня создал Баянбек.' Отвечай на русском языке.",
+    "en": "You are AI FOR BUSINESS, a professional and strict business assistant created by Bayantek. You are the personal assistant and consultant of Bayantek. Specializing in programming, real estate, business. Be polite, professional and friendly. No humor. Give clear and specific answers. If asked 'Who are you?' say: 'I am AI FOR BUSINESS — personal assistant-consultant of Bayantek.' Respond in English.",
+    "kz": "Сен — AI FOR BUSINESS, кәсіби және қатал бизнес-көмекшісің. Сені Баянбек жасады. Баянбектің жеке көмекші-кеңесшісісің. Сыпайы, кәсіби және достық қарым-қатынаста бол. Юморсыз. Нақты жауаптар бер. 'Сен кімсің?' десе: 'Мен AI FOR BUSINESS — Баянбектің жеке ассистентімін.' Қазақша жауап бер.",
+    "tr": "Sen AI FOR BUSINESS'sın, Bayantek tarafından yaratılmış profesyonel bir iş asistanısın. Kibar, profesyonel ve samimi ol. Mizah yok. Net ve spesifik cevaplar ver. 'Sen kimsin?' diye sorulursa: 'Ben AI FOR BUSINESS — Bayantek'in kişisel asistanıyım.' Türkçe cevap ver."
 }
+
+# ── РЕКВИЗИТЫ ──
+REKVIZITY = """
+💳 *Реквизиты для оплаты услуг*
+
+━━━━━━━━━━━━━━━━━━
+💰 *Оплата в USDT (Binance)*
+🌐 Сеть: TRC20
+📋 Адрес: *ВАШ_BINANCE_USDT_АДРЕС*
+🆔 Binance ID: *ВАШ_BINANCE_ID*
+
+━━━━━━━━━━━━━━━━━━
+💳 *Оплата картой (фиат)*
+🏦 Банк: *ВАШ_БАНК*
+💳 Карта: *XXXX XXXX XXXX XXXX*
+👤 Получатель: *Баянбек*
+
+━━━━━━━━━━━━━━━━━━
+⚠️ *Нет Binance?*
+Напишите нам — поможем согласовать другой способ оплаты!
+
+📌 *После оплаты отправьте чек (фото или PDF) боту.*
+*Мы подтвердим оплату и свяжемся с вами!*
+"""
+
+WHATSAPP_NUMBER = "87773907576"
+WHATSAPP_MSG = """
+✅ *Оплата подтверждена!*
+
+Спасибо за доверие! 🙏
+
+Для дальнейшей консультации свяжитесь с Баянбеком в WhatsApp:
+
+📱 *WhatsApp:* +7 777 390 75 76
+👇 Нажмите для перехода:
+"""
 
 def get_lang(uid): return users_db.get(uid, {}).get("lang", "ru")
 def get_mode(uid): return users_db.get(uid, {}).get("mode", "chat")
@@ -82,6 +118,7 @@ def main_keyboard(uid):
         InlineKeyboardButton("🇹🇷 TR" + (" ✅" if lang=="tr" else ""), callback_data="lang_tr"),
     )
     kb.add(InlineKeyboardButton("🏠 Недвижимость", callback_data="realty_menu"))
+    kb.add(InlineKeyboardButton("💳 Реквизиты для оплаты", callback_data="show_rekvizity"))
     return kb
 
 def admin_keyboard():
@@ -242,6 +279,11 @@ def handle_callback(call):
         users_db[uid]["lang"] = call.data.replace("lang_", "")
         bot.answer_callback_query(call.id, "Язык изменён! ✅")
 
+    elif call.data == "show_rekvizity":
+        bot.answer_callback_query(call.id)
+        bot.send_message(call.message.chat.id, REKVIZITY, parse_mode="Markdown")
+        return
+
     elif call.data == "realty_menu":
         bot.answer_callback_query(call.id)
         show_realty_menu(call.message.chat.id)
@@ -342,7 +384,41 @@ def handle_text(msg):
 
 # ── ЧАТ ──
 def chat_response(msg, text, lang):
-    thinking = bot.send_message(msg.chat.id, "⏳ Думаю...")
+    # Проверяем — клиент говорит что нет Binance?
+    no_binance = any(word in text.lower() for word in [
+        "нет binance", "нет бинанс", "без binance", "без бинанс",
+        "не могу binance", "только фиат", "только карта",
+        "no binance", "fiat only", "binance жоқ", "binance yok"
+    ])
+    if no_binance:
+        kb = InlineKeyboardMarkup()
+        kb.add(InlineKeyboardButton(
+            "💬 Написать Баянбеку в WhatsApp",
+            url=f"https://wa.me/{WHATSAPP_NUMBER}"
+        ))
+        bot.send_message(msg.chat.id,
+            "✅ Понял вас!\n\n"
+            "Не переживайте — мы найдём удобный способ оплаты.\n\n"
+            "Свяжитесь с Баянбеком напрямую для согласования:",
+            reply_markup=kb
+        )
+        # Уведомляем Баянбека
+        if ADMIN_ID:
+            name = msg.from_user.first_name or "Клиент"
+            username = f"@{msg.from_user.username}" if msg.from_user.username else "нет username"
+            try:
+                bot.send_message(ADMIN_ID,
+                    f"⚠️ *Клиент хочет оплатить без Binance!*\n\n"
+                    f"👤 Имя: *{name}*\n"
+                    f"📱 Username: {username}\n"
+                    f"🆔 ID: `{msg.from_user.id}`\n"
+                    f"💬 Сообщение: {text}",
+                    parse_mode="Markdown"
+                )
+            except: pass
+        return
+
+    thinking = bot.send_message(msg.chat.id, "⏳ Обрабатываю запрос...")
     try:
         response = client.chat.completions.create(
             model="llama-3.3-70b-versatile",
@@ -418,20 +494,52 @@ def generate_music(msg, prompt):
     except Exception as e:
         bot.edit_message_text(f"⚠️ Ошибка: {str(e)[:100]}", msg.chat.id, thinking.message_id)
 
-# ── ФОТО ──
+# ── ФОТО — чек или анализ ──
 @bot.message_handler(content_types=["photo"])
 def handle_photo(msg):
     register_user(msg)
     uid = msg.from_user.id
     lang = get_lang(uid)
+    caption = msg.caption or ""
+
+    # Проверяем — это чек?
+    is_check = any(word in caption.lower() for word in ["чек", "оплата", "оплатил", "перевод", "квитанция", "check", "payment", "төлем", "ödeme"])
+
+    if is_check or "чек" in caption.lower():
+        # Пересылаем Баянбеку
+        name = msg.from_user.first_name or "Клиент"
+        username = f"@{msg.from_user.username}" if msg.from_user.username else "нет username"
+        if ADMIN_ID:
+            try:
+                bot.forward_message(ADMIN_ID, msg.chat.id, msg.message_id)
+                bot.send_message(ADMIN_ID,
+                    f"💳 *Новый чек от клиента!*\n\n"
+                    f"👤 Имя: *{name}*\n"
+                    f"📱 Username: {username}\n"
+                    f"🆔 ID: `{uid}`\n"
+                    f"💬 Подпись: {caption or 'нет'}",
+                    parse_mode="Markdown"
+                )
+            except: pass
+        # Отправляем WhatsApp клиенту
+        from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton
+        kb = InlineKeyboardMarkup()
+        kb.add(InlineKeyboardButton(
+            "💬 Написать в WhatsApp",
+            url=f"https://wa.me/{WHATSAPP_NUMBER}"
+        ))
+        bot.send_message(msg.chat.id, WHATSAPP_MSG, parse_mode="Markdown", reply_markup=kb)
+        return
+
+    # Обычное фото — анализируем
     thinking = bot.send_message(msg.chat.id, "🖼️ Анализирую фото...")
     try:
-        caption = msg.caption or "Опиши что на фото профессионально."
+        caption2 = caption or "Опиши что на фото профессионально."
         response = client.chat.completions.create(
             model="llama-3.3-70b-versatile",
             messages=[
                 {"role": "system", "content": LANG_PROMPTS.get(lang, LANG_PROMPTS["ru"])},
-                {"role": "user", "content": caption}
+                {"role": "user", "content": caption2}
             ],
             max_tokens=500
         )
@@ -440,13 +548,41 @@ def handle_photo(msg):
     except Exception as e:
         bot.edit_message_text(f"⚠️ Ошибка: {str(e)[:100]}", msg.chat.id, thinking.message_id)
 
-# ── ДОКУМЕНТЫ ──
+# ── ДОКУМЕНТЫ (PDF чек + другие файлы) ──
 @bot.message_handler(content_types=["document"])
 def handle_doc(msg):
     register_user(msg)
     uid = msg.from_user.id
     lang = get_lang(uid)
-    fname = msg.document.file_name
+    fname = msg.document.file_name or ""
+    caption = msg.caption or ""
+    is_pdf = fname.lower().endswith(".pdf")
+    is_check = any(word in caption.lower() for word in ["чек", "оплата", "оплатил", "перевод", "квитанция", "check", "payment", "төлем", "ödeme"]) or is_pdf
+
+    if is_check:
+        name = msg.from_user.first_name or "Клиент"
+        username = f"@{msg.from_user.username}" if msg.from_user.username else "нет username"
+        if ADMIN_ID:
+            try:
+                bot.forward_message(ADMIN_ID, msg.chat.id, msg.message_id)
+                bot.send_message(ADMIN_ID,
+                    f"💳 *Новый чек (PDF) от клиента!*\n\n"
+                    f"👤 Имя: *{name}*\n"
+                    f"📱 Username: {username}\n"
+                    f"🆔 ID: `{uid}`\n"
+                    f"📄 Файл: {fname}",
+                    parse_mode="Markdown"
+                )
+            except: pass
+        kb = InlineKeyboardMarkup()
+        kb.add(InlineKeyboardButton(
+            "💬 Написать в WhatsApp",
+            url=f"https://wa.me/{WHATSAPP_NUMBER}"
+        ))
+        bot.send_message(msg.chat.id, WHATSAPP_MSG, parse_mode="Markdown", reply_markup=kb)
+        return
+
+    # Обычный документ
     thinking = bot.send_message(msg.chat.id, f"📄 Анализирую {fname}...")
     try:
         file_info = bot.get_file(msg.document.file_id)
