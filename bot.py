@@ -55,8 +55,8 @@ REKVIZITY = """
 ━━━━━━━━━━━━━━━━━━
 💰 *Оплата в USDT (Binance)*
 🌐 Сеть: TRC20
-📋 Адрес: *ВАШ_BINANCE_USDT_АДРЕС*
-🆔 Binance ID: *ВАШ_BINANCE_ID*
+📋 Адрес: *TU8KMPXB7HpY6EvariKpjcF6iDumUW4cqq*
+🆔 Binance ID: *368020481*
 
 ━━━━━━━━━━━━━━━━━━
 💳 *Оплата картой (фиат)*
