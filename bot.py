@@ -1,6 +1,6 @@
 """
-AI FOR BUSINESS — Telegram Bot ПОЛНАЯ ВЕРСИЯ
-=============================================
+AI FOR BUSINESS — Telegram Bot ФИНАЛЬНАЯ ВЕРСИЯ
+=================================================
 Установка:
   pip install pyTelegramBotAPI groq requests
 
@@ -13,7 +13,6 @@ from groq import Groq
 import requests
 import os
 import tempfile
-import json
 from datetime import datetime
 from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton
 
@@ -22,27 +21,23 @@ from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton
 # ══════════════════════════════════════
 TELEGRAM_TOKEN = os.environ.get("TELEGRAM_TOKEN")
 GROQ_KEY       = os.environ.get("GROQ_KEY")
-ADMIN_ID       = os.environ.get("ADMIN_ID")  # Ваш Telegram ID
+ADMIN_ID       = os.environ.get("ADMIN_ID")
 # ══════════════════════════════════════
 
 client = Groq(api_key=GROQ_KEY)
 bot = telebot.TeleBot(TELEGRAM_TOKEN)
 
-# ── БАЗА ДАННЫХ (в памяти) ──
-users_db = {}      # все пользователи
-stats_db = {}      # статистика
-realty_db = []     # база недвижимости
-
-# ── НАЧАЛЬНЫЕ ОБЪЕКТЫ НЕДВИЖИМОСТИ ──
+# ── БАЗА ДАННЫХ ──
+users_db  = {}
 realty_db = [
-    {"id": 1, "type": "Квартира", "city": "Мерсин", "price": 85000, "rooms": 2, "area": 75, "desc": "Новостройка, вид на море, 3 этаж", "contact": "@bayanchatbot"},
-    {"id": 2, "type": "Вилла",    "city": "Анталья", "price": 250000, "rooms": 4, "area": 200, "desc": "Частный бассейн, сад, гараж", "contact": "@bayanchatbot"},
-    {"id": 3, "type": "Квартира", "city": "Стамбул", "price": 120000, "rooms": 3, "area": 110, "desc": "Центр города, евроремонт", "contact": "@bayanchatbot"},
-    {"id": 4, "type": "Офис",     "city": "Мерсин",  "price": 50000,  "rooms": 1, "area": 60,  "desc": "Бизнес центр, парковка", "contact": "@bayanchatbot"},
+    {"id":1,"type":"Квартира","city":"Мерсин","price":85000,"rooms":2,"area":75,"desc":"Новостройка, вид на море, 3 этаж","contact":"@bayanchatbot"},
+    {"id":2,"type":"Вилла","city":"Анталья","price":250000,"rooms":4,"area":200,"desc":"Частный бассейн, сад, гараж","contact":"@bayanchatbot"},
+    {"id":3,"type":"Квартира","city":"Стамбул","price":120000,"rooms":3,"area":110,"desc":"Центр города, евроремонт","contact":"@bayanchatbot"},
+    {"id":4,"type":"Офис","city":"Мерсин","price":50000,"rooms":1,"area":60,"desc":"Бизнес центр, парковка","contact":"@bayanchatbot"},
 ]
 
+# ── ПРОМПТЫ ──
 LANG_PROMPTS = {
-   LANG_PROMPTS = {
     "ru": (
         "Ты — AI FOR BUSINESS, профессиональный и строгий бизнес-ассистент. "
         "Тебя создал Баянбек. Ты являешься личным помощником и консультантом Баянбека. "
@@ -62,7 +57,7 @@ LANG_PROMPTS = {
         "You are AI FOR BUSINESS, a professional business assistant created by Bayantek. "
         "Personal assistant of Bayantek. Be polite, professional and friendly. No humor. "
         "If asked about prices or services say EXACTLY: "
-        "'Our services and prices:\n\n"
+        "'Our services:\n\n"
         "🌐 Websites: 30,000-60,000 tenge, working time 3-7 days.\n\n"
         "🤖 Telegram bots: 10,000-30,000 tenge, working time 3-7 days.\n\n"
         "🎬 Video editing software: 200,000 tenge.\n\n"
@@ -90,7 +85,6 @@ LANG_PROMPTS = {
         "Türkçe cevap ver."
     ),
 }
-}
 
 # ── РЕКВИЗИТЫ ──
 REKVIZITY = """
@@ -113,7 +107,6 @@ REKVIZITY = """
 Напишите нам — поможем согласовать другой способ оплаты!
 
 📌 *После оплаты отправьте чек (фото или PDF) боту.*
-*Мы подтвердим оплату и свяжемся с вами!*
 """
 
 WHATSAPP_NUMBER = "87773907576"
@@ -128,25 +121,7 @@ WHATSAPP_MSG = """
 👇 Нажмите для перехода:
 """
 
-PRICES = """
-💼 *Прайс-лист AI FOR BUSINESS*
-
-━━━━━━━━━━━━━━━━━━
-🌐 *Сайты*
-💰 Цена: от *30 000* до *60 000 тенге*
-⏱ Срок: от *3 до 7 дней*
-📌 Зависит от сложности проекта
-
-━━━━━━━━━━━━━━━━━━
-🤖 *Telegram боты*
-💰 Цена: от *10 000* до *30 000 тенге*
-⏱ Срок: от *3 до 7 дней*
-📌 Зависит от функционала
-
-━━━━━━━━━━━━━━━━━━
-📞 Для точной стоимости опишите ваш проект — сделаем расчёт бесплатно!
-"""
-
+# ── ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ──
 def get_lang(uid): return users_db.get(uid, {}).get("lang", "ru")
 def get_mode(uid): return users_db.get(uid, {}).get("mode", "chat")
 def is_admin(uid): return str(uid) == str(ADMIN_ID)
@@ -168,7 +143,7 @@ def register_user(msg):
 def main_keyboard(uid):
     lang = users_db.get(uid, {}).get("lang", "ru")
     mode = users_db.get(uid, {}).get("mode", "chat")
-    kb = InlineKeyboardMarkup(row_width=3)
+    kb = InlineKeyboardMarkup(row_width=2)
     kb.add(
         InlineKeyboardButton("💬 Чат" + (" ✅" if mode=="chat" else ""), callback_data="mode_chat"),
         InlineKeyboardButton("🎨 Картинка" + (" ✅" if mode=="image" else ""), callback_data="mode_image"),
@@ -200,15 +175,16 @@ def start(msg):
     uid = msg.from_user.id
     name = msg.from_user.first_name or "Друг"
     bot.send_message(msg.chat.id,
-        f"👋 Привет, *{name}*! Я *AI FOR BUSINESS* — личный ассистент Баянбека!\n\n"
+        f"👋 Здравствуйте, *{name}*!\n\n"
+        "Я *AI FOR BUSINESS* — личный ассистент Баянбека.\n\n"
         "💬 Чат — отвечаю на любые вопросы\n"
         "🎙️ Голос — говорите, я пойму\n"
         "🎨 Картинки — генерирую по описанию\n"
-        "🎵 Музыка — создаю по запросу\n"
         "🏠 Недвижимость — каталог объектов\n"
+        "💳 Реквизиты — оплата услуг\n"
         "📎 Файлы и фото — анализирую\n\n"
         "🌍 RU • EN • KZ • TR\n\n"
-        "Всё *бесплатно*! Задайте вопрос 👇",
+        "Чем могу помочь? 👇",
         parse_mode="Markdown",
         reply_markup=main_keyboard(uid)
     )
@@ -220,11 +196,9 @@ def admin_panel(msg):
         bot.send_message(msg.chat.id, "⛔ Нет доступа!")
         return
     total = len(users_db)
-    today = datetime.now().strftime("%d.%m.%Y")
     bot.send_message(msg.chat.id,
         f"🔐 *Панель администратора*\n\n"
-        f"👥 Всего пользователей: *{total}*\n"
-        f"📅 Дата: *{today}*\n\n"
+        f"👥 Всего пользователей: *{total}*\n\n"
         f"Выберите действие 👇",
         parse_mode="Markdown",
         reply_markup=admin_keyboard()
@@ -238,19 +212,39 @@ def stats_cmd(msg):
         return
     show_stats(msg.chat.id)
 
-# ── /broadcast ──
-@bot.message_handler(commands=["broadcast"])
-def broadcast_cmd(msg):
-    if not is_admin(msg.from_user.id):
-        bot.send_message(msg.chat.id, "⛔ Нет доступа!")
-        return
-    bot.send_message(msg.chat.id,
-        "📬 *Рассылка*\n\nНапишите текст для рассылки всем пользователям.\n"
-        "Следующее сообщение будет отправлено всем!",
+# ── /pay ──
+@bot.message_handler(commands=["pay"])
+def pay_cmd(msg):
+    bot.send_message(msg.chat.id, REKVIZITY, parse_mode="Markdown")
+
+# ── /menu ──
+@bot.message_handler(commands=["menu"])
+def menu(msg):
+    register_user(msg)
+    bot.send_message(msg.chat.id, "⚙️ Меню:", reply_markup=main_keyboard(msg.from_user.id))
+
+# ── СТАТИСТИКА ──
+def show_stats(chat_id):
+    total = len(users_db)
+    total_msgs = sum(u.get("messages", 0) for u in users_db.values())
+    langs = {}
+    for u in users_db.values():
+        l = u.get("lang", "ru")
+        langs[l] = langs.get(l, 0) + 1
+    bot.send_message(chat_id,
+        f"📊 *Статистика бота*\n\n"
+        f"👥 Всего пользователей: *{total}*\n"
+        f"💬 Всего сообщений: *{total_msgs}*\n\n"
+        f"🌍 По языкам:\n"
+        f"🇷🇺 RU: {langs.get('ru',0)}\n"
+        f"🇬🇧 EN: {langs.get('en',0)}\n"
+        f"🇰🇿 KZ: {langs.get('kz',0)}\n"
+        f"🇹🇷 TR: {langs.get('tr',0)}\n\n"
+        f"🏠 Объектов: *{len(realty_db)}*",
         parse_mode="Markdown"
     )
-    bot.register_next_step_handler(msg, do_broadcast)
 
+# ── РАССЫЛКА ──
 def do_broadcast(msg):
     if not is_admin(msg.from_user.id): return
     text = f"📢 *Сообщение от AI FOR BUSINESS:*\n\n{msg.text}"
@@ -269,26 +263,6 @@ def do_broadcast(msg):
         parse_mode="Markdown"
     )
 
-def show_stats(chat_id):
-    total = len(users_db)
-    total_msgs = sum(u.get("messages", 0) for u in users_db.values())
-    langs = {}
-    for u in users_db.values():
-        l = u.get("lang", "ru")
-        langs[l] = langs.get(l, 0) + 1
-    text = (
-        f"📊 *Статистика бота*\n\n"
-        f"👥 Всего пользователей: *{total}*\n"
-        f"💬 Всего сообщений: *{total_msgs}*\n\n"
-        f"🌍 *По языкам:*\n"
-        f"🇷🇺 RU: {langs.get('ru', 0)}\n"
-        f"🇬🇧 EN: {langs.get('en', 0)}\n"
-        f"🇰🇿 KZ: {langs.get('kz', 0)}\n"
-        f"🇹🇷 TR: {langs.get('tr', 0)}\n\n"
-        f"🏠 Объектов недвижимости: *{len(realty_db)}*"
-    )
-    bot.send_message(chat_id, text, parse_mode="Markdown")
-
 # ── НЕДВИЖИМОСТЬ ──
 def show_realty_menu(chat_id):
     kb = InlineKeyboardMarkup(row_width=2)
@@ -299,14 +273,13 @@ def show_realty_menu(chat_id):
         InlineKeyboardButton("🌍 Все объекты", callback_data="realty_all"),
     )
     bot.send_message(chat_id,
-        "🏠 *Каталог недвижимости от Баянбека*\n\n"
-        "Выберите категорию 👇",
+        "🏠 *Каталог недвижимости от Баянбека*\n\nВыберите категорию 👇",
         parse_mode="Markdown",
         reply_markup=kb
     )
 
 def show_realty_list(chat_id, filter_type=None):
-    items = realty_db if not filter_type else [r for r in realty_db if r["type"] == filter_type]
+    items = realty_db if not filter_type else [r for r in realty_db if r["type"]==filter_type]
     if not items:
         bot.send_message(chat_id, "😔 Объектов не найдено.")
         return
@@ -318,38 +291,47 @@ def show_realty_list(chat_id, filter_type=None):
             f"💰 Цена: *${r['price']:,}*\n"
             f"🛏 Комнат: *{r['rooms']}*\n"
             f"📐 Площадь: *{r['area']} м²*\n"
-            f"📝 {r['desc']}\n\n"
-            f"📱 Контакт: {r['contact']}",
+            f"📝 {r['desc']}",
             parse_mode="Markdown",
             reply_markup=kb
         )
+
+def add_realty(msg):
+    if not is_admin(msg.from_user.id): return
+    try:
+        parts = [p.strip() for p in msg.text.split("|")]
+        new_obj = {
+            "id": len(realty_db)+1,
+            "type": parts[0],
+            "city": parts[1],
+            "price": int(parts[2]),
+            "rooms": int(parts[3]),
+            "area": int(parts[4]),
+            "desc": parts[5],
+            "contact": "@bayanchatbot"
+        }
+        realty_db.append(new_obj)
+        bot.send_message(msg.chat.id,
+            f"✅ Объект добавлен!\n🏠 {new_obj['type']} в {new_obj['city']}\n💰 ${new_obj['price']:,}"
+        )
+    except:
+        bot.send_message(msg.chat.id, "⚠️ Ошибка! Формат: Тип | Город | Цена | Комнат | Площадь | Описание")
 
 # ── CALLBACKS ──
 @bot.callback_query_handler(func=lambda c: True)
 def handle_callback(call):
     uid = call.from_user.id
-    register_user(call.message)
+    if uid not in users_db:
+        users_db[uid] = {"lang":"ru","mode":"chat","messages":0}
 
     if call.data.startswith("mode_"):
-        if uid not in users_db: users_db[uid] = {}
-        users_db[uid]["mode"] = call.data.replace("mode_", "")
-        hints = {"chat":"💬 Режим чата!","image":"🎨 Опишите картинку!","music":"🎵 Опишите музыку!"}
-        bot.answer_callback_query(call.id, hints.get(users_db[uid]["mode"], ""))
+        users_db[uid]["mode"] = call.data.replace("mode_","")
+        hints = {"chat":"💬 Режим чата!","image":"🎨 Опишите картинку!"}
+        bot.answer_callback_query(call.id, hints.get(users_db[uid]["mode"],""))
 
     elif call.data.startswith("lang_"):
-        if uid not in users_db: users_db[uid] = {}
-        users_db[uid]["lang"] = call.data.replace("lang_", "")
+        users_db[uid]["lang"] = call.data.replace("lang_","")
         bot.answer_callback_query(call.id, "Язык изменён! ✅")
-
-    elif call.data == "show_prices":
-        bot.answer_callback_query(call.id)
-        kb = InlineKeyboardMarkup()
-        kb.add(InlineKeyboardButton(
-            "📞 Получить расчёт в WhatsApp",
-            url=f"https://wa.me/{WHATSAPP_NUMBER}"
-        ))
-        bot.send_message(call.message.chat.id, PRICES, parse_mode="Markdown", reply_markup=kb)
-        return
 
     elif call.data == "show_rekvizity":
         bot.answer_callback_query(call.id)
@@ -368,8 +350,7 @@ def handle_callback(call):
 
     elif call.data.startswith("realty_"):
         bot.answer_callback_query(call.id)
-        filter_type = call.data.replace("realty_", "")
-        show_realty_list(call.message.chat.id, filter_type)
+        show_realty_list(call.message.chat.id, call.data.replace("realty_",""))
         return
 
     elif call.data == "admin_stats":
@@ -380,66 +361,32 @@ def handle_callback(call):
     elif call.data == "admin_users":
         bot.answer_callback_query(call.id)
         text = "👥 *Последние пользователи:*\n\n"
-        for i, (uid2, u) in enumerate(list(users_db.items())[-10:]):
-            name = u.get("name", "?")
-            uname = f"@{u.get('username')}" if u.get("username") else "нет username"
-            msgs = u.get("messages", 0)
+        for i,(uid2,u) in enumerate(list(users_db.items())[-10:]):
+            name = u.get("name","?")
+            uname = f"@{u.get('username')}" if u.get("username") else "нет"
+            msgs = u.get("messages",0)
             text += f"{i+1}. *{name}* ({uname}) — {msgs} сообщ.\n"
         bot.send_message(call.message.chat.id, text, parse_mode="Markdown")
         return
 
     elif call.data == "admin_broadcast":
         bot.answer_callback_query(call.id)
-        bot.send_message(call.message.chat.id,
-            "📬 Напишите текст для рассылки всем пользователям:"
-        )
+        bot.send_message(call.message.chat.id, "📬 Напишите текст для рассылки:")
         bot.register_next_step_handler(call.message, do_broadcast)
         return
 
     elif call.data == "admin_add_realty":
         bot.answer_callback_query(call.id)
         bot.send_message(call.message.chat.id,
-            "🏠 *Добавить объект*\n\n"
-            "Напишите в формате:\n"
-            "`Тип | Город | Цена$ | Комнат | Площадь м² | Описание`\n\n"
-            "Пример:\n"
-            "`Квартира | Мерсин | 90000 | 2 | 80 | Вид на море`",
+            "🏠 Формат:\n`Тип | Город | Цена | Комнат | Площадь | Описание`",
             parse_mode="Markdown"
         )
         bot.register_next_step_handler(call.message, add_realty)
         return
 
     try:
-        bot.edit_message_reply_markup(
-            call.message.chat.id,
-            call.message.message_id,
-            reply_markup=main_keyboard(uid)
-        )
+        bot.edit_message_reply_markup(call.message.chat.id, call.message.message_id, reply_markup=main_keyboard(uid))
     except: pass
-
-def add_realty(msg):
-    if not is_admin(msg.from_user.id): return
-    try:
-        parts = [p.strip() for p in msg.text.split("|")]
-        new_obj = {
-            "id": len(realty_db) + 1,
-            "type": parts[0],
-            "city": parts[1],
-            "price": int(parts[2]),
-            "rooms": int(parts[3]),
-            "area": int(parts[4]),
-            "desc": parts[5],
-            "contact": "@bayanchatbot"
-        }
-        realty_db.append(new_obj)
-        bot.send_message(msg.chat.id,
-            f"✅ Объект добавлен!\n\n"
-            f"🏠 {new_obj['type']} в {new_obj['city']}\n"
-            f"💰 ${new_obj['price']:,}\n"
-            f"📐 {new_obj['area']} м²",
-        )
-    except:
-        bot.send_message(msg.chat.id, "⚠️ Ошибка! Проверьте формат данных.")
 
 # ── ТЕКСТ ──
 @bot.message_handler(content_types=["text"])
@@ -450,52 +397,45 @@ def handle_text(msg):
     if text.startswith("/"): return
     mode = get_mode(uid)
     lang = get_lang(uid)
-    if mode == "image": generate_image(msg, text)
-    else: chat_response(msg, text, lang)
 
-# ── ЧАТ ──
-def chat_response(msg, text, lang):
-    # Проверяем — клиент говорит что нет Binance?
-    no_binance = any(word in text.lower() for word in [
-        "нет binance", "нет бинанс", "без binance", "без бинанс",
-        "не могу binance", "только фиат", "только карта",
-        "no binance", "fiat only", "binance жоқ", "binance yok"
+    # Нет Binance?
+    no_binance = any(w in text.lower() for w in [
+        "нет binance","нет бинанс","без binance","только фиат","только карта",
+        "no binance","fiat only","binance жоқ","binance yok"
     ])
     if no_binance:
         kb = InlineKeyboardMarkup()
-        kb.add(InlineKeyboardButton(
-            "💬 Написать Баянбеку в WhatsApp",
-            url=f"https://wa.me/{WHATSAPP_NUMBER}"
-        ))
+        kb.add(InlineKeyboardButton("💬 Написать Баянбеку в WhatsApp", url=f"https://wa.me/{WHATSAPP_NUMBER}"))
         bot.send_message(msg.chat.id,
-            "✅ Понял вас!\n\n"
-            "Не переживайте — мы найдём удобный способ оплаты.\n\n"
+            "Понял вас! Не переживайте — мы найдём удобный способ оплаты.\n\n"
             "Свяжитесь с Баянбеком напрямую для согласования:",
             reply_markup=kb
         )
-        # Уведомляем Баянбека
         if ADMIN_ID:
-            name = msg.from_user.first_name or "Клиент"
-            username = f"@{msg.from_user.username}" if msg.from_user.username else "нет username"
             try:
+                name = msg.from_user.first_name or "Клиент"
+                uname = f"@{msg.from_user.username}" if msg.from_user.username else "нет"
                 bot.send_message(ADMIN_ID,
-                    f"⚠️ *Клиент хочет оплатить без Binance!*\n\n"
-                    f"👤 Имя: *{name}*\n"
-                    f"📱 Username: {username}\n"
-                    f"🆔 ID: `{msg.from_user.id}`\n"
-                    f"💬 Сообщение: {text}",
+                    f"⚠️ *Клиент без Binance!*\n👤 {name} ({uname})\n💬 {text}",
                     parse_mode="Markdown"
                 )
             except: pass
         return
 
+    if mode == "image":
+        generate_image(msg, text)
+    else:
+        chat_response(msg, text, lang)
+
+# ── ЧАТ ──
+def chat_response(msg, text, lang):
     thinking = bot.send_message(msg.chat.id, "⏳ Обрабатываю запрос...")
     try:
         response = client.chat.completions.create(
             model="llama-3.3-70b-versatile",
             messages=[
-                {"role": "system", "content": LANG_PROMPTS.get(lang, LANG_PROMPTS["ru"])},
-                {"role": "user", "content": text}
+                {"role":"system","content":LANG_PROMPTS.get(lang, LANG_PROMPTS["ru"])},
+                {"role":"user","content":text}
             ],
             max_tokens=1000
         )
@@ -519,9 +459,9 @@ def handle_voice(msg):
         with tempfile.NamedTemporaryFile(suffix=".ogg", delete=False) as f:
             f.write(file_data)
             tmp_path = f.name
-        with open(tmp_path, "rb") as audio_file:
+        with open(tmp_path,"rb") as af:
             transcription = client.audio.transcriptions.create(
-                file=("voice.ogg", audio_file, "audio/ogg"),
+                file=("voice.ogg", af, "audio/ogg"),
                 model="whisper-large-v3",
                 language={"ru":"ru","en":"en","kz":"kk","tr":"tr"}.get(lang,"ru")
             )
@@ -530,7 +470,7 @@ def handle_voice(msg):
         bot.edit_message_text(f"🎙️ Вы сказали: *{text}*", msg.chat.id, thinking.message_id, parse_mode="Markdown")
         chat_response(msg, text, lang)
     except Exception as e:
-        bot.edit_message_text(f"⚠️ Ошибка: {str(e)[:100]}", msg.chat.id, thinking.message_id)
+        bot.edit_message_text(f"⚠️ Ошибка голоса: {str(e)[:100]}", msg.chat.id, thinking.message_id)
 
 # ── КАРТИНКИ ──
 def generate_image(msg, prompt):
@@ -547,70 +487,38 @@ def generate_image(msg, prompt):
     except Exception as e:
         bot.edit_message_text(f"⚠️ Ошибка: {str(e)[:100]}", msg.chat.id, thinking.message_id)
 
-# ── МУЗЫКА ──
-def generate_music(msg, prompt):
-    thinking = bot.send_message(msg.chat.id, "🎵 Создаю музыку...")
-    try:
-        url = f"https://audio.pollinations.ai/{requests.utils.quote(prompt)}"
-        resp = requests.get(url, timeout=60)
-        if resp.status_code == 200:
-            bot.delete_message(msg.chat.id, thinking.message_id)
-            with tempfile.NamedTemporaryFile(suffix=".mp3", delete=False) as f:
-                f.write(resp.content)
-                f.flush()
-                bot.send_audio(msg.chat.id, open(f.name,"rb"), title=prompt[:50], performer="AI FOR BUSINESS")
-            os.unlink(f.name)
-        else:
-            bot.edit_message_text("⚠️ Ошибка генерации.", msg.chat.id, thinking.message_id)
-    except Exception as e:
-        bot.edit_message_text(f"⚠️ Ошибка: {str(e)[:100]}", msg.chat.id, thinking.message_id)
-
-# ── ФОТО — чек или анализ ──
+# ── ФОТО / ЧЕК ──
 @bot.message_handler(content_types=["photo"])
 def handle_photo(msg):
     register_user(msg)
     uid = msg.from_user.id
     lang = get_lang(uid)
     caption = msg.caption or ""
+    is_check = any(w in caption.lower() for w in ["чек","оплата","оплатил","перевод","квитанция","check","payment","төлем","ödeme"])
 
-    # Проверяем — это чек?
-    is_check = any(word in caption.lower() for word in ["чек", "оплата", "оплатил", "перевод", "квитанция", "check", "payment", "төлем", "ödeme"])
-
-    if is_check or "чек" in caption.lower():
-        # Пересылаем Баянбеку
+    if is_check:
         name = msg.from_user.first_name or "Клиент"
-        username = f"@{msg.from_user.username}" if msg.from_user.username else "нет username"
+        uname = f"@{msg.from_user.username}" if msg.from_user.username else "нет"
         if ADMIN_ID:
             try:
                 bot.forward_message(ADMIN_ID, msg.chat.id, msg.message_id)
                 bot.send_message(ADMIN_ID,
-                    f"💳 *Новый чек от клиента!*\n\n"
-                    f"👤 Имя: *{name}*\n"
-                    f"📱 Username: {username}\n"
-                    f"🆔 ID: `{uid}`\n"
-                    f"💬 Подпись: {caption or 'нет'}",
+                    f"💳 *Новый чек!*\n👤 {name} ({uname})\n🆔 `{uid}`",
                     parse_mode="Markdown"
                 )
             except: pass
-        # Отправляем WhatsApp клиенту
-        from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton
         kb = InlineKeyboardMarkup()
-        kb.add(InlineKeyboardButton(
-            "💬 Написать в WhatsApp",
-            url=f"https://wa.me/{WHATSAPP_NUMBER}"
-        ))
+        kb.add(InlineKeyboardButton("💬 Написать в WhatsApp", url=f"https://wa.me/{WHATSAPP_NUMBER}"))
         bot.send_message(msg.chat.id, WHATSAPP_MSG, parse_mode="Markdown", reply_markup=kb)
         return
 
-    # Обычное фото — анализируем
     thinking = bot.send_message(msg.chat.id, "🖼️ Анализирую фото...")
     try:
-        caption2 = caption or "Опиши что на фото профессионально."
         response = client.chat.completions.create(
             model="llama-3.3-70b-versatile",
             messages=[
-                {"role": "system", "content": LANG_PROMPTS.get(lang, LANG_PROMPTS["ru"])},
-                {"role": "user", "content": caption2}
+                {"role":"system","content":LANG_PROMPTS.get(lang, LANG_PROMPTS["ru"])},
+                {"role":"user","content":caption or "Опиши что на фото профессионально."}
             ],
             max_tokens=500
         )
@@ -619,7 +527,7 @@ def handle_photo(msg):
     except Exception as e:
         bot.edit_message_text(f"⚠️ Ошибка: {str(e)[:100]}", msg.chat.id, thinking.message_id)
 
-# ── ДОКУМЕНТЫ (PDF чек + другие файлы) ──
+# ── ДОКУМЕНТЫ / PDF ЧЕК ──
 @bot.message_handler(content_types=["document"])
 def handle_doc(msg):
     register_user(msg)
@@ -628,32 +536,24 @@ def handle_doc(msg):
     fname = msg.document.file_name or ""
     caption = msg.caption or ""
     is_pdf = fname.lower().endswith(".pdf")
-    is_check = any(word in caption.lower() for word in ["чек", "оплата", "оплатил", "перевод", "квитанция", "check", "payment", "төлем", "ödeme"]) or is_pdf
+    is_check = is_pdf or any(w in caption.lower() for w in ["чек","оплата","оплатил","перевод","квитанция","check","payment"])
 
     if is_check:
         name = msg.from_user.first_name or "Клиент"
-        username = f"@{msg.from_user.username}" if msg.from_user.username else "нет username"
+        uname = f"@{msg.from_user.username}" if msg.from_user.username else "нет"
         if ADMIN_ID:
             try:
                 bot.forward_message(ADMIN_ID, msg.chat.id, msg.message_id)
                 bot.send_message(ADMIN_ID,
-                    f"💳 *Новый чек (PDF) от клиента!*\n\n"
-                    f"👤 Имя: *{name}*\n"
-                    f"📱 Username: {username}\n"
-                    f"🆔 ID: `{uid}`\n"
-                    f"📄 Файл: {fname}",
+                    f"💳 *Новый PDF чек!*\n👤 {name} ({uname})\n📄 {fname}",
                     parse_mode="Markdown"
                 )
             except: pass
         kb = InlineKeyboardMarkup()
-        kb.add(InlineKeyboardButton(
-            "💬 Написать в WhatsApp",
-            url=f"https://wa.me/{WHATSAPP_NUMBER}"
-        ))
+        kb.add(InlineKeyboardButton("💬 Написать в WhatsApp", url=f"https://wa.me/{WHATSAPP_NUMBER}"))
         bot.send_message(msg.chat.id, WHATSAPP_MSG, parse_mode="Markdown", reply_markup=kb)
         return
 
-    # Обычный документ
     thinking = bot.send_message(msg.chat.id, f"📄 Анализирую {fname}...")
     try:
         file_info = bot.get_file(msg.document.file_id)
@@ -665,12 +565,12 @@ def handle_doc(msg):
         if text_content:
             prompt += f"\nСодержимое:\n{text_content}\nАнализ:"
         else:
-            prompt += f"\nДай совет по работе с этим типом файла."
+            prompt += "\nДай профессиональный совет по работе с этим типом файла."
         response = client.chat.completions.create(
             model="llama-3.3-70b-versatile",
             messages=[
-                {"role": "system", "content": LANG_PROMPTS.get(lang, LANG_PROMPTS["ru"])},
-                {"role": "user", "content": prompt}
+                {"role":"system","content":LANG_PROMPTS.get(lang, LANG_PROMPTS["ru"])},
+                {"role":"user","content":prompt}
             ],
             max_tokens=600
         )
@@ -680,10 +580,9 @@ def handle_doc(msg):
         bot.edit_message_text(f"⚠️ Ошибка: {str(e)[:100]}", msg.chat.id, thinking.message_id)
 
 print("=" * 40)
-print("🤖 AI FOR BUSINESS — ПОЛНАЯ ВЕРСИЯ")
+print("🤖 AI FOR BUSINESS — ФИНАЛЬНАЯ ВЕРСИЯ")
 print("📱 @bayanchatbot")
-print("✅ Чат + Голос + Картинки + Музыка")
-print("✅ Статистика + Рассылка + Недвижимость")
+print("✅ Groq + Whisper + Недвижимость + Оплата")
 print("Нажмите Ctrl+C для остановки")
 print("=" * 40)
 bot.infinity_polling()
