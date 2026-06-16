@@ -146,7 +146,6 @@ def main_keyboard(uid):
     kb = InlineKeyboardMarkup(row_width=2)
     kb.add(
         InlineKeyboardButton("💬 Чат" + (" ✅" if mode=="chat" else ""), callback_data="mode_chat"),
-        InlineKeyboardButton("🎨 Картинка" + (" ✅" if mode=="image" else ""), callback_data="mode_image"),
     )
     kb.add(
         InlineKeyboardButton("🇷🇺 RU" + (" ✅" if lang=="ru" else ""), callback_data="lang_ru"),
@@ -179,7 +178,6 @@ def start(msg):
         "Я *AI FOR BUSINESS* — личный ассистент Баянбека.\n\n"
         "💬 Чат — отвечаю на любые вопросы\n"
         "🎙️ Голос — говорите, я пойму\n"
-        "🎨 Картинки — генерирую по описанию\n"
         "🏠 Недвижимость — каталог объектов\n"
         "💳 Реквизиты — оплата услуг\n"
         "📎 Файлы и фото — анализирую\n\n"
@@ -423,7 +421,7 @@ def handle_text(msg):
         return
 
     if mode == "image":
-        generate_image(msg, text)
+        chat_response(msg, text, lang)
     else:
         chat_response(msg, text, lang)
 
