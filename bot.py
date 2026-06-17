@@ -51,6 +51,11 @@ LANG_PROMPTS = {
         "🤖 Telegram боты: от 10 000 до 30 000 тенге, время работы 3-7 дней.\n\n"
         "🎬 Программа для видеомонтажа: 200 000 тенге.\n\n"
         "Цена зависит от сложности проекта. Для точного расчёта опишите ваш проект.' "
+        "Если спросят про программу видеомонтажа подробнее — отвечай: "
+        "'🎬 Программа для видеомонтажа от Баянбека — это профессиональный инструмент для монтажа видео. "
+        "Цена: 200 000 тенге. "
+        "Включает: удобный интерфейс, профессиональные инструменты монтажа, поддержку всех форматов видео, техническую поддержку после покупки. "
+        "Для приобретения или уточнения деталей — свяжитесь с Баянбеком напрямую.' "
         "Отвечай на русском языке."
     ),
     "en": (
@@ -128,7 +133,8 @@ def is_admin(uid): return str(uid) == str(ADMIN_ID)
 
 def register_user(msg):
     uid = msg.from_user.id
-    if uid not in users_db:
+    is_new = uid not in users_db
+    if is_new:
         users_db[uid] = {
             "id": uid,
             "name": msg.from_user.first_name or "Пользователь",
@@ -138,6 +144,20 @@ def register_user(msg):
             "joined": datetime.now().strftime("%d.%m.%Y %H:%M"),
             "messages": 0
         }
+        # Уведомляем Баянбека о новом клиенте
+        if ADMIN_ID:
+            try:
+                name = msg.from_user.first_name or "Клиент"
+                uname = f"@{msg.from_user.username}" if msg.from_user.username else "нет username"
+                bot.send_message(ADMIN_ID,
+                    f"🔔 *Новый клиент написал боту!*\n\n"
+                    f"👤 Имя: *{name}*\n"
+                    f"📱 Username: {uname}\n"
+                    f"🆔 ID: `{uid}`\n"
+                    f"🕐 Время: {datetime.now().strftime('%d.%m.%Y %H:%M')}",
+                    parse_mode="Markdown"
+                )
+            except: pass
     users_db[uid]["messages"] = users_db[uid].get("messages", 0) + 1
 
 def main_keyboard(uid):
@@ -153,7 +173,6 @@ def main_keyboard(uid):
         InlineKeyboardButton("🇰🇿 KZ" + (" ✅" if lang=="kz" else ""), callback_data="lang_kz"),
         InlineKeyboardButton("🇹🇷 TR" + (" ✅" if lang=="tr" else ""), callback_data="lang_tr"),
     )
-    kb.add(InlineKeyboardButton("🏠 Недвижимость", callback_data="realty_menu"))
     kb.add(InlineKeyboardButton("💳 Реквизиты для оплаты", callback_data="show_rekvizity"))
     return kb
 
@@ -175,14 +194,12 @@ def start(msg):
     name = msg.from_user.first_name or "Друг"
     bot.send_message(msg.chat.id,
         f"👋 Здравствуйте, *{name}*!\n\n"
-        "Я *AI FOR BUSINESS* — личный ассистент Баянбека.\n\n"
-        "💬 Чат — отвечаю на любые вопросы\n"
-        "🎙️ Голос — говорите, я пойму\n"
-        "🏠 Недвижимость — каталог объектов\n"
-        "💳 Реквизиты — оплата услуг\n"
-        "📎 Файлы и фото — анализирую\n\n"
-        "🌍 RU • EN • KZ • TR\n\n"
-        "Чем могу помочь? 👇",
+        "Меня зовут Баянбек.\n\n"
+        "Рад что вы написали! Занимаюсь разработкой сайтов, "
+        "Telegram ботов и помогаю с вопросами по недвижимости.\n\n"
+        "Каждый проект делаю с душой и ответственностью. "
+        "Если есть идея или вопрос — расскажите, вместе найдём лучшее решение! 🤝\n\n"
+        "💬 Консультация бесплатная — пишите смело!",
         parse_mode="Markdown",
         reply_markup=main_keyboard(uid)
     )
@@ -552,23 +569,26 @@ def handle_doc(msg):
         bot.send_message(msg.chat.id, WHATSAPP_MSG, parse_mode="Markdown", reply_markup=kb)
         return
 
+    # Только текстовые документы
+    if not fname.endswith(".txt"):
+        bot.send_message(msg.chat.id,
+            "📎 Принимаю только:\n"
+            "• PDF чеки об оплате\n"
+            "• TXT документы\n\n"
+            "Для отправки чека добавьте подпись 'чек' к файлу."
+        )
+        return
+
     thinking = bot.send_message(msg.chat.id, f"📄 Анализирую {fname}...")
     try:
         file_info = bot.get_file(msg.document.file_id)
         file_data = bot.download_file(file_info.file_path)
-        text_content = ""
-        if fname.endswith(".txt"):
-            text_content = file_data.decode("utf-8", errors="ignore")[:3000]
-        prompt = f"Файл '{fname}' получен."
-        if text_content:
-            prompt += f"\nСодержимое:\n{text_content}\nАнализ:"
-        else:
-            prompt += "\nДай профессиональный совет по работе с этим типом файла."
+        text_content = file_data.decode("utf-8", errors="ignore")[:3000]
         response = client.chat.completions.create(
             model="llama-3.3-70b-versatile",
             messages=[
                 {"role":"system","content":LANG_PROMPTS.get(lang, LANG_PROMPTS["ru"])},
-                {"role":"user","content":prompt}
+                {"role":"user","content":f"Документ '{fname}':\n{text_content}\nАнализ:"}
             ],
             max_tokens=600
         )
