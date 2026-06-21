@@ -1,5 +1,5 @@
 """
-AI FOR BUSINESS — Telegram Bot ФИНАЛЬНАЯ ВЕРСИЯ
+AI FOR BUSINESS — Telegram Bot ФИНАЛЬНАЯ ВЕРСИЯ (+ SALYTRAVEL)
 =================================================
 Установка:
   pip install pyTelegramBotAPI groq requests
@@ -24,6 +24,9 @@ GROQ_KEY       = os.environ.get("GROQ_KEY")
 ADMIN_ID       = os.environ.get("ADMIN_ID")
 # ══════════════════════════════════════
 
+# ── SALYTRAVEL (сайт дешёвых билетов) ──
+SALYTRAVEL_URL = "https://bayanchatbot.netlify.app"
+
 client = Groq(api_key=GROQ_KEY)
 bot = telebot.TeleBot(TELEGRAM_TOKEN)
 
@@ -40,11 +43,11 @@ realty_db = [
 LANG_PROMPTS = {
     "ru": (
         "Ты — AI FOR BUSINESS, профессиональный и строгий бизнес-ассистент. "
-        "Тебя создал Баянбек. Ты являешься личным помощником и консультантом Баянбека. "
+        "Ты — личный помощник и бизнес-консультант. "
         "Специализируешься на программировании, риэлторских вопросах и бизнесе. "
         "Общайся вежливо, профессионально и дружелюбно. Без юмора. "
         "Давай чёткие и конкретные ответы. "
-        "Если спросят 'Кто ты?' — отвечай: 'Я AI FOR BUSINESS — личный ассистент-консультант Баянбека. Меня создал Баянбек.' "
+        "Если спросят 'Кто ты?' — отвечай: 'Я AI FOR BUSINESS — ваш бизнес-ассистент и консультант.' "
         "Если спросят про цены, стоимость или услуги — отвечай ТОЧНО ТАК: "
         "'Наши услуги и цены:\n\n"
         "🌐 Сайты: от 30 000 до 60 000 тенге, время работы 3-7 дней.\n\n"
@@ -59,20 +62,20 @@ LANG_PROMPTS = {
         "Отвечай на русском языке."
     ),
     "en": (
-        "You are AI FOR BUSINESS, a professional business assistant created by Bayantek. "
-        "Personal assistant of Bayantek. Be polite, professional and friendly. No humor. "
+        "You are AI FOR BUSINESS, a professional business assistant. "
+        "Be polite, professional and friendly. No humor. "
         "If asked about prices or services say EXACTLY: "
         "'Our services:\n\n"
         "🌐 Websites: 30,000-60,000 tenge, working time 3-7 days.\n\n"
         "🤖 Telegram bots: 10,000-30,000 tenge, working time 3-7 days.\n\n"
         "🎬 Video editing software: 200,000 tenge.\n\n"
         "Price depends on complexity.' "
-        "If asked 'Who are you?' say: 'I am AI FOR BUSINESS — personal assistant of Bayantek.' "
+        "If asked 'Who are you?' say: 'I am AI FOR BUSINESS — your business assistant.' "
         "Respond in English."
     ),
     "kz": (
-        "Сен — AI FOR BUSINESS, кәсіби бизнес-көмекшісің. Сені Баянбек жасады. "
-        "Баянбектің жеке көмекші-кеңесшісісің. Юморсыз. "
+        "Сен — AI FOR BUSINESS, кәсіби бизнес-көмекшісің. "
+        "Жеке бизнес көмекші-кеңесшісің. Юморсыз. "
         "Баға туралы сұраса ДӘЛМЕ-ДӘЛ айт: "
         "'Біздің қызметтер:\n\n"
         "🌐 Сайттар: 30 000-60 000 теңге, жұмыс уақыты 3-7 күн.\n\n"
@@ -81,7 +84,7 @@ LANG_PROMPTS = {
         "Қазақша жауап бер."
     ),
     "tr": (
-        "Sen AI FOR BUSINESS'sın, Bayantek tarafından yaratılmış profesyonel bir iş asistanısın. "
+        "Sen AI FOR BUSINESS'sın, profesyonel bir iş asistanısın. "
         "Mizah yok. Fiyat sorulursa TAM OLARAK söyle: "
         "'Hizmetlerimiz:\n\n"
         "🌐 Web siteleri: 30.000-60.000 tenge, çalışma süresi 3-7 gün.\n\n"
@@ -174,6 +177,7 @@ def main_keyboard(uid):
         InlineKeyboardButton("🇹🇷 TR" + (" ✅" if lang=="tr" else ""), callback_data="lang_tr"),
     )
     kb.add(InlineKeyboardButton("💳 Реквизиты для оплаты", callback_data="show_rekvizity"))
+    kb.add(InlineKeyboardButton("✈️ SALYTRAVEL — дешёвые билеты", url=SALYTRAVEL_URL))
     return kb
 
 def admin_keyboard():
@@ -199,9 +203,24 @@ def start(msg):
         "Telegram ботов и помогаю с вопросами по недвижимости.\n\n"
         "Каждый проект делаю с душой и ответственностью. "
         "Если есть идея или вопрос — расскажите, вместе найдём лучшее решение! 🤝\n\n"
-        "💬 Консультация бесплатная — пишите смело!",
+        "💬 Консультация бесплатная — пишите смело!\n\n"
+        "✈️ А ещё попробуйте *SALYTRAVEL* — поиск дешёвых билетов, отелей и eSIM. "
+        "Команда /bilety",
         parse_mode="Markdown",
         reply_markup=main_keyboard(uid)
+    )
+
+# ── /bilety — SALYTRAVEL ──
+@bot.message_handler(commands=["bilety", "travel", "salytravel"])
+def salytravel_cmd(msg):
+    register_user(msg)
+    kb = InlineKeyboardMarkup()
+    kb.add(InlineKeyboardButton("✈️ Найти дешёвые билеты", url=SALYTRAVEL_URL))
+    bot.send_message(msg.chat.id,
+        "🌍 *SALYTRAVEL* — билеты, отели, eSIM, трансфер, страховка и туры в одном месте.\n\n"
+        "Сравни цены по всем системам и поймай самую низкую 👇",
+        parse_mode="Markdown",
+        reply_markup=kb
     )
 
 # ── /admin ──
@@ -600,6 +619,7 @@ def handle_doc(msg):
 print("=" * 40)
 print("🤖 AI FOR BUSINESS — ФИНАЛЬНАЯ ВЕРСИЯ")
 print("📱 @bayanchatbot")
+print("✈️ SALYTRAVEL подключён (/bilety)")
 print("✅ Groq + Whisper + Недвижимость + Оплата")
 print("Нажмите Ctrl+C для остановки")
 print("=" * 40)
